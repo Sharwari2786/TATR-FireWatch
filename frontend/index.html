@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TERRASCAN &mdash; Industrial Thermal Anomaly Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 32 32" width="26" height="26" fill="none">
+          <path d="M16 3 C 10 10, 8 15, 12 20 C 9 20, 6 17, 6 13 C 6 21, 12 29, 20 27 C 27 25, 29 17, 24 10 C 24 15, 21 18, 18 17 C 21 12, 20 6, 16 3 Z" fill="url(#g)"/>
+          <defs><linearGradient id="g" x1="6" y1="3" x2="29" y2="29"><stop offset="0" stop-color="#FF6B35"/><stop offset="1" stop-color="#45D9C0"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">TERRASCAN</div>
+        <div class="brand-sub">Industrial Thermal Anomaly Console</div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Close panel">&times;</button>
+    </div>
+
+    <div class="status-row">
+      <span class="pulse-dot"></span>
+      <span id="statusText">Reading NASA FIRMS + OSM feed&hellip;</span>
+    </div>
+
+    <section class="panel-block">
+      <h2>Region</h2>
+      <div class="mono-readout" id="regionName">&mdash;</div>
+      <select class="region-select" id="regionSelect">
+        <option value="">Loading regions&hellip;</option>
+      </select>
+      <div class="custom-bounds" id="customBounds">
+        <div class="bounds-row">
+          <input type="number" step="0.01" id="latMin" placeholder="Lat min" />
+          <input type="number" step="0.01" id="latMax" placeholder="Lat max" />
+        </div>
+        <div class="bounds-row">
+          <input type="number" step="0.01" id="lonMin" placeholder="Lon min" />
+          <input type="number" step="0.01" id="lonMax" placeholder="Lon max" />
+        </div>
+        <input type="text" id="customName" placeholder="Region name" class="bounds-name" />
+      </div>
+      <button class="rerun-btn" id="applyRegionBtn">Apply region</button>
+    </section>
+
+    <section class="panel-block">
+      <h2>Detected classes</h2>
+      <ul class="legend" id="legendList"></ul>
+    </section>
+
+    <section class="panel-block">
+      <h2>Summary</h2>
+      <div class="stat-grid" id="statGrid"></div>
+    </section>
+
+    <section class="panel-block">
+      <h2>Classifier performance</h2>
+      <div class="metric-lines" id="metricLines"></div>
+      <div class="metric-note">5-fold cross-validated Random Forest, evaluated on a held-out split of clustered hot zones.</div>
+    </section>
+
+    <section class="panel-block">
+      <h2>Pipeline</h2>
+      <ol class="pipeline-steps">
+        <li>Ingest FIRMS / VIIRS hotspots</li>
+        <li>DBSCAN spatio-temporal clustering</li>
+        <li>Feature extraction vs. OSM + land cover</li>
+        <li>Random Forest classification</li>
+        <li>Publish GIS layer</li>
+      </ol>
+      <button class="rerun-btn" id="rerunBtn">Re-run classification</button>
+    </section>
+
+    <div class="sidebar-footer">Smart India Hackathon &middot; Prototype build</div>
+  </aside>
+
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Open panel">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+  </button>
+
+  <main class="map-wrap">
+    <div id="map"></div>
+
+    <div class="top-controls">
+      <div class="filter-chip active" data-filter="all">All</div>
+      <div class="filter-chip" data-filter="Industrial Fire" style="--dot:#FF6B35">Industrial Fire</div>
+      <div class="filter-chip" data-filter="Flare" style="--dot:#45D9C0">Flare</div>
+      <div class="filter-chip" data-filter="Mining Activity" style="--dot:#D9A441">Mining</div>
+      <div class="filter-chip" data-filter="Agricultural Burn" style="--dot:#7CC142">Agri Burn</div>
+      <div class="filter-chip" data-filter="Wildfire" style="--dot:#FF4757">Wildfire</div>
+      <label class="facility-toggle">
+        <input type="checkbox" id="facilityToggle" checked />
+        <span>Industrial infrastructure layer</span>
+      </label>
+    </div>
+
+    <div class="detail-drawer" id="detailDrawer">
+      <button class="drawer-close" id="drawerClose">&times;</button>
+      <div id="drawerContent"></div>
+    </div>
+
+    <div class="loading-veil" id="loadingVeil">
+      <div class="loading-text" id="loadingText">Establishing satellite link&hellip;</div>
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

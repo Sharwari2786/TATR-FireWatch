@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+backend/data/raw/*.json
+backend/data/processed/*.json
+backend/data/processed/*.geojson
+backend/model/*.pkl
+backend/model/metrics.json
+.DS_Store
+*.log
