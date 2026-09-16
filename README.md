@@ -1,4 +1,7 @@
 # TERRASCAN
+
+[Live prototype](https://sih-2026-162.onrender.com/)
+
 ### AI-Based Detection and Classification of Industrial Fires and Persistent Thermal Sources
 
 A working prototype built for Smart India Hackathon, addressing the problem statement:
