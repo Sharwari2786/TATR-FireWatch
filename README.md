@@ -1,4 +1,4 @@
-# TERRASCAN
+# THERMOSCAN
 
 [Live prototype](https://sih-2026-162.onrender.com/)
 
