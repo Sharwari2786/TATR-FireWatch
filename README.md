@@ -1,6 +1,6 @@
 # THERMOSCAN
 
-[Live prototype](https://sih-2026-162.onrender.com/)
+Live Prototype: [Click Here](https://thermo-scan.onrender.com/)
 
 ### AI-Based Detection and Classification of Industrial Fires and Persistent Thermal Sources
 
