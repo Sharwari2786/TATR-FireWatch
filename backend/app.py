@@ -34,6 +34,14 @@ def hotzones():
 def facilities():
     return jsonify(read_json("facilities.geojson"))
 
+@app.route("/api/boundaries", methods=["GET"])
+def get_boundaries():
+    try:
+        with open("data/raw/tatr_boundary.json", "r") as f:
+            return jsonify(json.load(f))
+    except Exception as e:
+        return jsonify({"type": "FeatureCollection", "features": []}), 500
+
 
 @app.route("/api/summary")
 def summary():

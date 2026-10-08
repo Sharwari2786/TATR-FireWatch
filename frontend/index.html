@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>THERMOSCAN &mdash; Industrial Thermal Anomaly Console</title>
+<title>TATR FireWatch &mdash; Forest Fire Early Detection & Ranger Dispatch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,26 +18,26 @@
       <div class="brand-mark">
         <svg viewBox="0 0 32 32" width="26" height="26" fill="none">
           <path d="M16 3 C 10 10, 8 15, 12 20 C 9 20, 6 17, 6 13 C 6 21, 12 29, 20 27 C 27 25, 29 17, 24 10 C 24 15, 21 18, 18 17 C 21 12, 20 6, 16 3 Z" fill="url(#g)"/>
-          <defs><linearGradient id="g" x1="6" y1="3" x2="29" y2="29"><stop offset="0" stop-color="#FF6B35"/><stop offset="1" stop-color="#45D9C0"/></linearGradient></defs>
+          <defs><linearGradient id="g" x1="6" y1="3" x2="29" y2="29"><stop offset="0" stop-color="#FF4757"/><stop offset="1" stop-color="#2ED573"/></linearGradient></defs>
         </svg>
       </div>
       <div class="brand-text">
-        <div class="brand-name">THERMOSCAN</div>
-        <div class="brand-sub">Industrial Thermal Anomaly Console</div>
+        <div class="brand-name">TATR FireWatch</div>
+        <div class="brand-sub">Tadoba Forest Fire & Ranger Dispatch Console</div>
       </div>
       <button class="sidebar-close" id="sidebarClose" aria-label="Close panel">&times;</button>
     </div>
 
     <div class="status-row">
       <span class="pulse-dot"></span>
-      <span id="statusText">Reading NASA FIRMS + OSM feed&hellip;</span>
+      <span id="statusText">Reading NASA FIRMS & TATR Beat Data&hellip;</span>
     </div>
 
     <section class="panel-block">
-      <h2>Region</h2>
+      <h2>Reserve Sector</h2>
       <div class="mono-readout" id="regionName">&mdash;</div>
       <select class="region-select" id="regionSelect">
-        <option value="">Loading regions&hellip;</option>
+        <option value="">Loading reserve sectors&hellip;</option>
       </select>
       <div class="custom-bounds" id="customBounds">
         <div class="bounds-row">
@@ -48,40 +48,51 @@
           <input type="number" step="0.01" id="lonMin" placeholder="Lon min" />
           <input type="number" step="0.01" id="lonMax" placeholder="Lon max" />
         </div>
-        <input type="text" id="customName" placeholder="Region name" class="bounds-name" />
+        <input type="text" id="customName" placeholder="Sector / Range name" class="bounds-name" />
       </div>
-      <button class="rerun-btn" id="applyRegionBtn">Apply region</button>
+      <button class="rerun-btn" id="applyRegionBtn">Apply Range Bounds</button>
     </section>
 
     <section class="panel-block">
-      <h2>Detected classes</h2>
+      <h2>Fire Classification</h2>
       <ul class="legend" id="legendList"></ul>
     </section>
 
     <section class="panel-block">
-      <h2>Summary</h2>
+      <h2>Incident Summary</h2>
       <div class="stat-grid" id="statGrid"></div>
     </section>
 
+    <!-- NEW: Active Alert Queue Section -->
     <section class="panel-block">
-      <h2>Classifier performance</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h2 style="margin: 0;">Active Alert Queue</h2>
+        <span id="alertCountBadge" style="background: #ff4757; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: bold;">0</span>
+      </div>
+      <div id="alertQueueList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+        <!-- Dynamically rendered by app.js -->
+      </div>
+    </section>
+
+    <section class="panel-block">
+      <h2>Classifier Performance</h2>
       <div class="metric-lines" id="metricLines"></div>
-      <div class="metric-note">5-fold cross-validated Random Forest, evaluated on a held-out split of clustered hot zones.</div>
+      <div class="metric-note">5-fold cross-validated Random Forest evaluating fire severity, canopy density & buffer proximity.</div>
     </section>
 
     <section class="panel-block">
-      <h2>Pipeline</h2>
+      <h2>Detection Pipeline</h2>
       <ol class="pipeline-steps">
-        <li>Ingest FIRMS / VIIRS hotspots</li>
-        <li>DBSCAN spatio-temporal clustering</li>
-        <li>Feature extraction vs. OSM + land cover</li>
-        <li>Random Forest classification</li>
-        <li>Publish GIS layer</li>
+        <li>Ingest FIRMS / VIIRS thermal hotspots</li>
+        <li>Spatio-temporal DBSCAN fire perimeter clustering</li>
+        <li>Enrich canopy cover & distance to beat post</li>
+        <li>Forest Fire vs. Agri-stubble classification</li>
+        <li>Generate Ranger Dispatch & GIS layer</li>
       </ol>
-      <button class="rerun-btn" id="rerunBtn">Re-run classification</button>
+      <button class="rerun-btn" id="rerunBtn">Re-run Fire Scan</button>
     </section>
 
-    <div class="sidebar-footer">Smart India Hackathon &middot; Prototype build</div>
+    <div class="sidebar-footer">WildHack TATR 2026 &middot; Tadoba Tiger Reserve Prototype</div>
   </aside>
 
   <button class="sidebar-toggle" id="sidebarToggle" aria-label="Open panel">
@@ -92,15 +103,15 @@
     <div id="map"></div>
 
     <div class="top-controls">
-      <div class="filter-chip active" data-filter="all">All</div>
-      <div class="filter-chip" data-filter="Industrial Fire" style="--dot:#FF6B35">Industrial Fire</div>
-      <div class="filter-chip" data-filter="Flare" style="--dot:#45D9C0">Flare</div>
-      <div class="filter-chip" data-filter="Mining Activity" style="--dot:#D9A441">Mining</div>
-      <div class="filter-chip" data-filter="Agricultural Burn" style="--dot:#7CC142">Agri Burn</div>
-      <div class="filter-chip" data-filter="Wildfire" style="--dot:#FF4757">Wildfire</div>
-      <label class="facility-toggle">
-        <input type="checkbox" id="facilityToggle" checked />
-        <span>Industrial infrastructure layer</span>
+      <div class="filter-chip active" data-filter="all">All Incidents</div>
+      <div class="filter-chip" data-filter="core" style="--dot:#FF4757">Deep Core Fire</div>
+      <div class="filter-chip" data-filter="buffer" style="--dot:#FFA502">Buffer Fire</div>
+      <div class="filter-chip" data-filter="agri" style="--dot:#7CC142">Agri Stubble Burn</div>
+      <div class="filter-chip" data-filter="mining" style="--dot:#D9A441">Mining Edge</div>
+      <label class="facility-toggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.06); padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);">
+        <input type="checkbox" id="facilityToggle" checked style="cursor: pointer; accent-color: #2e86de;" />
+        <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: #2e86de; border: 1.5px solid #fff; border-radius: 4px; font-size: 10px;">🛡️</span>
+        <span style="font-size: 12px; font-weight: 500; color: #eee;">TATR Beat Posts & Watchtowers</span>
       </label>
     </div>
 
@@ -110,7 +121,7 @@
     </div>
 
     <div class="loading-veil" id="loadingVeil">
-      <div class="loading-text" id="loadingText">Establishing satellite link&hellip;</div>
+      <div class="loading-text" id="loadingText">Establishing satellite link with VIIRS / NASA FIRMS&hellip;</div>
     </div>
   </main>
 </div>

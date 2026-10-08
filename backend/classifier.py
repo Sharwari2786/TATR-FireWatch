@@ -12,13 +12,11 @@ MODEL_PATH = "model/classifier.pkl"
 ENCODER_PATH = "model/label_encoder.pkl"
 
 LABEL_DISPLAY = {
-    "refinery": "Industrial Fire",
-    "power_plant": "Industrial Fire",
-    "steel_plant": "Industrial Fire",
-    "gas_flare": "Flare",
-    "mining_site": "Mining Activity",
-    "agricultural_burn": "Agricultural Burn",
-    "wildfire": "Wildfire",
+    "wildfire": "Deep Core Forest Fire",
+    "buffer_fire": "Buffer Zone Surface Fire",
+    "agricultural_burn": "Agricultural Fringe Burn",
+    "mining_site": "Mining Fringe Thermal Anomaly",
+    "prescribed_burn": "Controlled Prescribed Burn"
 }
 
 
