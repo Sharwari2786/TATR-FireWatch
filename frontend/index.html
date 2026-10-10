@@ -63,15 +63,20 @@
       <div class="stat-grid" id="statGrid"></div>
     </section>
 
-    <!-- NEW: Active Alert Queue Section -->
+    <section class="panel-block">
+      <h2>Export Incident Intelligence</h2>
+      <div style="display: flex; gap: 8px;">
+        <button class="rerun-btn" id="exportCsvBtn" style="margin-top: 0; background: #2f3542;">Export CSV</button>
+        <button class="rerun-btn" id="exportGeoJsonBtn" style="margin-top: 0; background: #2f3542;">Export GeoJSON</button>
+      </div>
+    </section>
+
     <section class="panel-block">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <h2 style="margin: 0;">Active Alert Queue</h2>
         <span id="alertCountBadge" style="background: #ff4757; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: bold;">0</span>
       </div>
-      <div id="alertQueueList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-        <!-- Dynamically rendered by app.js -->
-      </div>
+      <div id="alertQueueList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
     </section>
 
     <section class="panel-block">
@@ -108,10 +113,24 @@
       <div class="filter-chip" data-filter="buffer" style="--dot:#FFA502">Buffer Fire</div>
       <div class="filter-chip" data-filter="agri" style="--dot:#7CC142">Agri Stubble Burn</div>
       <div class="filter-chip" data-filter="mining" style="--dot:#D9A441">Mining Edge</div>
-      <label class="facility-toggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.06); padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);">
+
+      <!-- Boundaries Toggle -->
+      <label class="facility-toggle">
+        <input type="checkbox" id="boundaryToggle" checked style="cursor: pointer; accent-color: #ff4757;" />
+        <span style="font-size: 12px; font-weight: 500; color: #eee;">Reserve Boundaries</span>
+      </label>
+
+      <!-- Beat Posts Toggle -->
+      <label class="facility-toggle">
         <input type="checkbox" id="facilityToggle" checked style="cursor: pointer; accent-color: #2e86de;" />
         <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: #2e86de; border: 1.5px solid #fff; border-radius: 4px; font-size: 10px;">🛡️</span>
-        <span style="font-size: 12px; font-weight: 500; color: #eee;">TATR Beat Posts & Watchtowers</span>
+        <span style="font-size: 12px; font-weight: 500; color: #eee;">Beat Posts & Towers</span>
+      </label>
+
+      <!-- Spread Vectors Toggle -->
+      <label class="facility-toggle">
+        <input type="checkbox" id="vectorToggle" checked style="cursor: pointer; accent-color: #ff6b35;" />
+        <span style="font-size: 12px; font-weight: 500; color: #eee;">Spread Vectors</span>
       </label>
     </div>
 

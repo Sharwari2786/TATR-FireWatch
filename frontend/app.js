@@ -14,7 +14,9 @@ const CLASS_COLORS = {
   "Mining Fringe Thermal Anomaly": "#D9A441",
 };
 
-let map, hotzoneLayer, facilityLayer, boundaryLayer, activeFilter = "all", allFeatures = [];
+let map, hotzoneLayer, facilityLayer, boundaryLayer, vectorLayer;
+let activeFilter = "all";
+let allFeatures = [];
 
 function initMap(centerLat, centerLon) {
   map = L.map("map", { zoomControl: false, attributionControl: true }).setView([centerLat, centerLon], 10);
@@ -26,9 +28,10 @@ function initMap(centerLat, centerLon) {
 
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
-  hotzoneLayer = L.layerGroup().addTo(map);
-  facilityLayer = L.layerGroup().addTo(map);
   boundaryLayer = L.layerGroup().addTo(map);
+  vectorLayer = L.layerGroup().addTo(map);
+  facilityLayer = L.layerGroup().addTo(map);
+  hotzoneLayer = L.layerGroup().addTo(map);
 }
 
 function facilityIconColor(type) {
@@ -43,16 +46,15 @@ function facilityIconColor(type) {
 
 function renderFacilities(geojson) {
   facilityLayer.clearLayers();
+  if (!geojson || !geojson.features) return;
+
   geojson.features.forEach((f) => {
     const [lon, lat] = f.geometry.coordinates;
     const type = f.properties.type;
     const isHQ = type === "ranger_hq";
-    
-    // Pick an intuitive icon for forest infrastructure
     const symbol = isHQ ? "🏢" : (type === "watchtower" ? "🗼" : "🛡️");
     const bg = isHQ ? "#10ac84" : "#2e86de";
 
-    // Custom square badge icon
     const icon = L.divIcon({
       className: "custom-station-pin",
       html: `
@@ -76,7 +78,6 @@ function renderFacilities(geojson) {
 
     const marker = L.marker([lat, lon], { icon });
 
-    // Clear hover badge tooltip
     marker.bindTooltip(`<strong>${f.properties.name}</strong><br/><span style="color:#bbb;font-size:11px;">${type.replace(/_/g, " ").toUpperCase()}</span>`, {
       direction: "top",
       offset: [0, -12],
@@ -98,6 +99,8 @@ function renderFacilities(geojson) {
 
 function renderBoundaries(geojson) {
   boundaryLayer.clearLayers();
+  if (!geojson) return;
+
   L.geoJSON(geojson, {
     style: function(feature) {
       const isCore = feature.properties.zone_type === "core";
@@ -115,7 +118,6 @@ function renderBoundaries(geojson) {
   }).addTo(boundaryLayer);
 }
 
-// Resilient class resolver that maps any variation into the exact 4 standard forestry classes
 function getFeatureClass(p) {
   const raw = p.predicted_class || p.class || p.true_label || "";
   const lower = raw.toLowerCase();
@@ -151,7 +153,28 @@ function renderHotzones(features) {
   features.forEach((f) => markerForFeature(f).addTo(hotzoneLayer));
 }
 
+function renderSpreadVectors(features) {
+  vectorLayer.clearLayers();
+  features.forEach((f) => {
+    const p = f.properties;
+    const [lon, lat] = f.geometry.coordinates;
 
+    // Render vectors for higher severity incidents
+    if ((p.frp_mean || 0) > 28) {
+      const driftLat = lat + 0.015;
+      const driftLon = lon + 0.018;
+
+      const line = L.polyline([[lat, lon], [driftLat, driftLon]], {
+        color: "#ff6b35",
+        weight: 2,
+        dashArray: "3, 6",
+        opacity: 0.85
+      }).addTo(vectorLayer);
+
+      line.bindTooltip("Projected Fire Spread Vector (3h Window)", { sticky: true });
+    }
+  });
+}
 
 function applyFilter() {
   const filtered = activeFilter === "all"
@@ -160,7 +183,9 @@ function applyFilter() {
         const cls = getFeatureClass(f.properties);
         return cls.toLowerCase().includes(activeFilter.toLowerCase()) || activeFilter.toLowerCase().includes(cls.toLowerCase());
       });
+
   renderHotzones(filtered);
+  renderSpreadVectors(filtered);
 }
 
 function buildLegend(classCounts) {
@@ -194,6 +219,62 @@ function buildMetrics(summary) {
     <div class="row"><span>CV Std Dev</span><span>&plusmn;${cvStd}%</span></div>
     <div class="row"><span>Test Set Accuracy</span><span>${testAcc}%</span></div>
   `;
+}
+
+function renderAlertQueue(features) {
+  const container = document.getElementById("alertQueueList");
+  const badge = document.getElementById("alertCountBadge");
+  if (!container || !badge) return;
+
+  const urgentIncidents = features.filter((f) => {
+    const cls = getFeatureClass(f.properties);
+    return cls === "Deep Core Forest Fire" || cls === "Buffer Zone Surface Fire";
+  });
+
+  urgentIncidents.sort((a, b) => (b.properties.frp_mean || 0) - (a.properties.frp_mean || 0));
+
+  badge.textContent = urgentIncidents.length;
+  container.innerHTML = "";
+
+  if (urgentIncidents.length === 0) {
+    container.innerHTML = `<div style="font-size: 12px; color: #888;">No active core or buffer fires detected.</div>`;
+    return;
+  }
+
+  urgentIncidents.forEach((feat) => {
+    const p = feat.properties;
+    const [lon, lat] = feat.geometry.coordinates;
+    const cls = getFeatureClass(p);
+    const isCore = cls === "Deep Core Forest Fire";
+    const borderColor = isCore ? "#ff4757" : "#ffa502";
+
+    const item = document.createElement("div");
+    item.style.cssText = `
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid ${borderColor};
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    `;
+
+    item.innerHTML = `
+      <div style="display: flex; justify-content: space-between; font-weight: bold; color: ${borderColor};">
+        <span>${cls}</span>
+        <span>${p.frp_mean || 35} MW</span>
+      </div>
+      <div style="color: #bbb; margin-top: 3px; font-size: 11px;">
+        Post: <strong>${p.nearest_facility_name || 'Moharli HQ'}</strong> (${p.dist_to_nearest_facility_km || 2.1} km)
+      </div>
+    `;
+
+    item.addEventListener("click", () => {
+      map.setView([lat, lon], 12);
+      openDrawer(p);
+    });
+
+    container.appendChild(item);
+  });
 }
 
 function openDrawer(p) {
@@ -246,9 +327,19 @@ document.querySelectorAll(".filter-chip").forEach((chip) => {
   });
 });
 
-document.getElementById("facilityToggle").addEventListener("change", (e) => {
+document.getElementById("facilityToggle")?.addEventListener("change", (e) => {
   if (e.target.checked) facilityLayer.addTo(map);
   else map.removeLayer(facilityLayer);
+});
+
+document.getElementById("boundaryToggle")?.addEventListener("change", (e) => {
+  if (e.target.checked) boundaryLayer.addTo(map);
+  else map.removeLayer(boundaryLayer);
+});
+
+document.getElementById("vectorToggle")?.addEventListener("change", (e) => {
+  if (e.target.checked) vectorLayer.addTo(map);
+  else map.removeLayer(vectorLayer);
 });
 
 document.getElementById("sidebarToggle").addEventListener("click", () => {
@@ -371,11 +462,56 @@ async function loadAll() {
   buildLegend(counts);
   buildStats(summary);
   buildMetrics(summary);
-  renderAlertQueue(allFeatures); // <-- Add this line
+  renderAlertQueue(allFeatures);
   if (boundaries) renderBoundaries(boundaries);
   renderFacilities(facilities);
+  renderSpreadVectors(allFeatures);
   applyFilter();
 }
+
+document.getElementById("exportCsvBtn")?.addEventListener("click", () => {
+  if (!allFeatures.length) return alert("No active incidents to export.");
+
+  const headers = ["Cluster ID", "Class", "Confidence", "FRP (MW)", "Latitude", "Longitude", "Nearest Post", "Distance (km)"];
+  const rows = allFeatures.map((f) => {
+    const p = f.properties;
+    const [lon, lat] = f.geometry.coordinates;
+    return [
+      p.cluster_id || "N/A",
+      `"${getFeatureClass(p)}"`,
+      ((p.prediction_confidence || 0) * 100).toFixed(1) + "%",
+      p.frp_mean || 0,
+      lat.toFixed(4),
+      lon.toFixed(4),
+      `"${p.nearest_facility_name || 'Range HQ'}"`,
+      p.dist_to_nearest_facility_km || 0
+    ].join(",");
+  });
+
+  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `TATR_FireWatch_Incidents_${Date.now()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+
+document.getElementById("exportGeoJsonBtn")?.addEventListener("click", () => {
+  if (!allFeatures.length) return alert("No active incidents to export.");
+
+  const geojsonBlob = new Blob([JSON.stringify({ type: "FeatureCollection", features: allFeatures }, null, 2)], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(geojsonBlob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `TATR_FireWatch_Perimeters_${Date.now()}.geojson`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
 
 async function boot() {
   const centerLat = 20.25;
@@ -394,62 +530,3 @@ async function boot() {
 }
 
 boot();
-
-function renderAlertQueue(features) {
-  const container = document.getElementById("alertQueueList");
-  const badge = document.getElementById("alertCountBadge");
-  if (!container || !badge) return;
-
-  // Filter for genuine forest threats
-  const urgentIncidents = features.filter((f) => {
-    const cls = getFeatureClass(f.properties);
-    return cls === "Deep Core Forest Fire" || cls === "Buffer Zone Surface Fire";
-  });
-
-  // Sort by highest intensity (FRP) first
-  urgentIncidents.sort((a, b) => (b.properties.frp_mean || 0) - (a.properties.frp_mean || 0));
-
-  badge.textContent = urgentIncidents.length;
-  container.innerHTML = "";
-
-  if (urgentIncidents.length === 0) {
-    container.innerHTML = `<div style="font-size: 12px; color: #888;">No active core or buffer fires detected.</div>`;
-    return;
-  }
-
-  urgentIncidents.forEach((feat) => {
-    const p = feat.properties;
-    const [lon, lat] = feat.geometry.coordinates;
-    const cls = getFeatureClass(p);
-    const isCore = cls === "Deep Core Forest Fire";
-    const borderColor = isCore ? "#ff4757" : "#ffa502";
-
-    const item = document.createElement("div");
-    item.style.cssText = `
-      background: rgba(255, 255, 255, 0.04);
-      border-left: 3px solid ${borderColor};
-      padding: 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    `;
-
-    item.innerHTML = `
-      <div style="display: flex; justify-content: space-between; font-weight: bold; color: ${borderColor};">
-        <span>${cls}</span>
-        <span>${p.frp_mean || 35} MW</span>
-      </div>
-      <div style="color: #bbb; margin-top: 3px; font-size: 11px;">
-        Post: <strong>${p.nearest_facility_name || 'Moharli HQ'}</strong> (${p.dist_to_nearest_facility_km || 2.1} km)
-      </div>
-    `;
-
-    // Clicking an alert zooms straight to the hotspot and opens its dispatch drawer
-    item.addEventListener("click", () => {
-      map.setView([lat, lon], 12);
-      openDrawer(p);
-    });
-
-    container.appendChild(item);
-  });
-}
