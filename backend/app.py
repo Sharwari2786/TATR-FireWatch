@@ -36,11 +36,18 @@ def facilities():
 
 @app.route("/api/boundaries", methods=["GET"])
 def get_boundaries():
-    try:
-        with open("data/raw/tatr_boundary.json", "r") as f:
-            return jsonify(json.load(f))
-    except Exception as e:
-        return jsonify({"type": "FeatureCollection", "features": []}), 500
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, "data", "raw", "tatr_boundary.json"),
+        os.path.join(base_dir, "..", "backend", "data", "raw", "tatr_boundary.json"),
+        "data/raw/tatr_boundary.json",
+        "backend/data/raw/tatr_boundary.json"
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                return jsonify(json.load(f))
+    return jsonify({"type": "FeatureCollection", "features": []}), 200
 
 
 @app.route("/api/summary")
