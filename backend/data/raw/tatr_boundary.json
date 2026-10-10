@@ -1,0 +1,50 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_type": "core",
+        "name": "Tadoba Critical Core Habitat",
+        "stroke": "#ff4757",
+        "fill": "#ff4757"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [79.28, 20.16],
+          [79.33, 20.14],
+          [79.43, 20.16],
+          [79.45, 20.24],
+          [79.42, 20.32],
+          [79.34, 20.35],
+          [79.28, 20.30],
+          [79.25, 20.22],
+          [79.28, 20.16]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "zone_type": "buffer",
+        "name": "TATR Extended Buffer Zone",
+        "stroke": "#2ed573",
+        "fill": "#2ed573"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [79.20, 20.10],
+          [79.48, 20.10],
+          [79.55, 20.20],
+          [79.52, 20.38],
+          [79.40, 20.44],
+          [79.22, 20.40],
+          [79.16, 20.24],
+          [79.20, 20.10]
+        ]]
+      }
+    }
+  ]
+}
