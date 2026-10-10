@@ -1,4 +1,4 @@
-const API_BASE = window.location.origin.includes("null") ? "http://localhost:5000" : "";
+const API_BASE = window.location.protocol === "file:" ? "http://localhost:5000" : "";
 
 const CLASS_ORDER = [
   "Deep Core Forest Fire",
